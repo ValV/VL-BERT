@@ -14,6 +14,8 @@ from common.utils.create_logger import create_logger
 from refcoco.data.build import make_dataloader
 from refcoco.modules import *
 
+CUDA_AVAILABLE = torch.cuda.is_available()
+
 POSITIVE_THRESHOLD = 0.5
 
 
@@ -53,11 +55,14 @@ def test_net(args, config):
 
     # get network
     model = eval(config.MODULE)(config)
-    if len(device_ids) > 1:
-        model = torch.nn.DataParallel(model, device_ids=device_ids).cuda()
+    if CUDA_AVAILABLE:
+        if len(device_ids) > 1:
+            model = torch.nn.DataParallel(model, device_ids=device_ids).cuda()
+        else:
+            torch.cuda.set_device(device_ids[0])
+            model = model.cuda()
     else:
-        torch.cuda.set_device(device_ids[0])
-        model = model.cuda()
+        model = model.cpu()
     checkpoint = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
     smart_load_model_state_dict(model, checkpoint['state_dict'])
 
@@ -75,7 +80,7 @@ def test_net(args, config):
     # for nbatch, batch in tqdm(enumerate(test_loader)):
         bs = test_loader.batch_sampler.batch_size if test_loader.batch_sampler is not None else test_loader.batch_size
         ref_ids.extend([test_database[id]['ref_id'] for id in range(cur_id, min(cur_id + bs, len(test_database)))])
-        batch = to_cuda(batch)
+        batch = to_cuda(batch) if CUDA_AVAILABLE else list(batch)
         output = model(*batch)
         pred_boxes.extend(output['pred_boxes'].detach().cpu().tolist())
         cur_id += bs
