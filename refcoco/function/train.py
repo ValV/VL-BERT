@@ -295,7 +295,8 @@ def train_net(args, config):
     validation_monitor = ValidationMonitor(
         do_validation, val_loader, val_metrics,
         host_metric_name='RefAcc',
-        label_index_in_batch=config.DATASET.LABEL_INDEX_IN_BATCH
+        label_index_in_batch=config.DATASET.LABEL_INDEX_IN_BATCH,
+        frequent=config.VAL_FREQUENT
     )
 
     # Optimizer initial lr before
