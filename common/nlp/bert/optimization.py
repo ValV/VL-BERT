@@ -177,11 +177,11 @@ class AdamW(Optimizer):
                 # the correct way of using L2 regularization/weight decay with Adam,
                 # since that will interact with the m and v parameters in strange ways.
                 #
-                # Instead we want to decay the weights in a manner that doesn't interact
+                # Instead, we want to decay the weights in a manner that doesn't interact
                 # with the m/v parameters. This is equivalent to adding the square
                 # of the weights to the loss with plain (non-momentum) SGD.
                 # Add weight decay at the end (fixed version)
                 if group['weight_decay'] > 0.0:
-                    p.data.add_(-group['lr'] * group['weight_decay'], p.data)
+                    p.data.add_(p.data, alpha=-group['lr'] * group['weight_decay'])
 
         return loss
