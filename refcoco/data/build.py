@@ -6,7 +6,12 @@ from .transforms.build import build_transforms
 from .collate_batch import BatchCollator
 import pprint
 
-DATASET_CATALOGS = {'refcoco+': RefCOCO}
+DATASET_CATALOGS = {
+    'refcoco+': RefCOCO,
+    'refcoco-05': RefCOCO,
+    'refcoco-10': RefCOCO,
+    'refcoco-20': RefCOCO
+}
 
 
 def build_dataset(dataset_name, *args, **kwargs):

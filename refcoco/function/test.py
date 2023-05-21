@@ -1,12 +1,14 @@
-import os
-import pprint
+import json
 import shutil
 
-import json
-from tqdm import tqdm, trange
+from os import makedirs, path as osp
+from pprint import pprint
+
 import numpy as np
 import torch
 import torch.nn.functional as F
+
+from tqdm import tqdm, trange
 
 from common.utils.load import smart_load_model_state_dict
 from common.trainer import to_cuda
@@ -37,17 +39,18 @@ def cacluate_iou(pred_boxes, gt_boxes):
 @torch.no_grad()
 def test_net(args, config):
     print('test net...')
-    pprint.pprint(args)
-    pprint.pprint(config)
+    pprint(args)
+    pprint(config)
     device_ids = [int(d) for d in config.GPUS.split(',')]
     #os.environ['CUDA_VISIBLE_DEVICES'] = config.GPUS
     config.DATASET.TEST_IMAGE_SET = args.split
     ckpt_path = args.ckpt
     save_path = args.result_path
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-    shutil.copy2(ckpt_path,
-                 os.path.join(save_path, '{}_test_ckpt_{}.model'.format(config.MODEL_PREFIX, config.DATASET.TASK)))
+    if not osp.exists(save_path):
+        makedirs(save_path)
+    shutil.copy2(ckpt_path, osp.join(
+        save_path, f'{config.MODEL_PREFIX}_test_ckpt_{config.DATASET.TASK}.model'
+    ))
 
     torch.backends.cudnn.enabled = False
     torch.backends.cudnn.deterministic = True
@@ -87,8 +90,11 @@ def test_net(args, config):
 
     result = [{'ref_id': ref_id, 'box': box} for ref_id, box in zip(ref_ids, pred_boxes)]
 
-    result_json_path = os.path.join(save_path, '{}_refcoco+_{}.json'.format(
-        config.MODEL_PREFIX if args.result_name is None else args.result_name, config.DATASET.TEST_IMAGE_SET))
+    result_name = (config.MODEL_PREFIX if args.result_name is None
+                   else osp.basename(args.result_name))
+    result_json_path = osp.join(
+        save_path, f'{result_name}_refcoco+_{config.DATASET.TEST_IMAGE_SET}.json'
+    )
     with open(result_json_path, 'w') as f:
         json.dump(result, f)
     print('result json saved to {}.'.format(result_json_path))
